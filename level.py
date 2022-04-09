@@ -1,3 +1,4 @@
+import csv
 import pygame
 from player import Player
 from objects.block import Block
@@ -9,14 +10,32 @@ class Level():
         self.game_size = game_size
         self.image_set = image_set
         self.objects = pygame.sprite.Group()
-        self.setLevel()
         self.player = player
+        self.generateMap()
+        self.setLevel()
         
     def setLevel(self):
-        Block(self.image_set["block"], (self.game_size[0], self.game_size[1] - self.image_set["block"].get_height()) , self.objects)
+        x = 0
+        y = self.game_size[1]
+        for row in reversed(self.lvl):
+            for col in row:
+                if col == "0":
+                    Block(self.image_set["block"], (x , y) , self.objects)
+                x += 32
+            y -= 32
+            x = 0
+
+
+    def generateMap(self):
+        self.lvl = []
+        with open("levels/Level2.csv", newline='') as csvfile:
+            spamreader = csv.reader(csvfile, delimiter=',', quotechar='"')
+            for row in spamreader:
+                self.lvl.append(row)
+        return self.lvl
 
     def update(self):
-        self.player.update(self.game_size, self.objects)
+        self.player.update(self.objects)
         if self.player.getOutcome()[0]:
             pass
         if self.player.getOutcome()[1]:

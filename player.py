@@ -1,5 +1,6 @@
 import json
 from objects.block import Block
+from math import ceil
 
 import pygame
 SETTINGS = json.load(open('settings.json'))
@@ -17,7 +18,8 @@ class Player(pygame.sprite.Sprite):
         self.pos = list(start_pos)
         self.on_ground = False
         self.is_jumping = False
-        self.jump_height = 20
+        self.jump_height = 13
+        self.angle = 0
 
         self.is_dead = False
         self.has_won = False
@@ -28,14 +30,17 @@ class Player(pygame.sprite.Sprite):
     def move(self):
         self.velocity[1] -= self.jump_height
 
-    def update(self, game_size: tuple, platforms: pygame.sprite.Group):
+    def update(self, platforms: pygame.sprite.Group):
         if self.is_jumping:
             if self.on_ground:
                 self.move()
                 self.on_ground = False
 
         if not self.on_ground:
-            self.velocity[1] += SETTINGS['Gravity']
+            # if self.velocity[1] > 0:
+            #     self.angle += .1
+            pass
+        self.velocity[1] += SETTINGS['Gravity']
 
         if self.velocity[1] > 50:
             self.velocity[1] = 50
@@ -48,32 +53,40 @@ class Player(pygame.sprite.Sprite):
 
         self.collide(self.velocity[1], platforms)
 
-        # temporary collide only with ground
-
-        if self.rect.y >= game_size[1] - self.size[1]:
-            self.on_ground = True
-            self.is_jumping = False
-            self.rect.y = game_size[1] - self.size[1]
-
-    def setOnGround(self, on_ground):
-        self.on_ground = on_ground
+        self.calculateAngle()
 
     def collide(self, vel: int, platforms: pygame.sprite.Group):
-
         for p in platforms:
             if pygame.sprite.collide_rect(self, p):
-                
                 if isinstance(p, Block):
                     if vel > 0:
+                        self.rect.bottom = p.rect.top
                         self.velocity[1] = 0
                         self.on_ground = True
                         self.is_jumping = False
                     elif vel < 0:
+                        self.velocity[0] = 0
                         self.rect.top = p.rect.bottom
+                        self.is_dead = True
                     else:
                         self.velocity[0] = 0
                         self.rect.right = p.rect.left
                         self.is_dead = True
+
+    def calculateAngle(self):
+        if not self.on_ground:
+            if self.angle < -360: self.angle += 360
+            self.angle = round(self.angle - 7.2, 1)
+        else:
+            multiplier = 1
+            closest_angle = round(self.angle / 90) * 90
+            if closest_angle - self.angle <= 0: multiplier = -1
+            if (self.angle + 7.2 * multiplier) * multiplier > (closest_angle) * multiplier:
+                self.angle += closest_angle - self.angle
+            else:
+                self.angle += 7.2 * multiplier
+
+
 
     def getPos(self):
         return self.pos
@@ -87,7 +100,10 @@ class Player(pygame.sprite.Sprite):
     def getVel(self):
         return self.velocity
 
-    def getPlayerSprite(self):
+    def getAngle(self):
+        return self.angle
+
+    def getPlayerGroup(self):
         return self.player_sprite
 
     def getOutcome(self):

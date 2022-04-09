@@ -1,6 +1,8 @@
+from random import seed
+from matplotlib.pyplot import draw
 import pygame
 from level import Level
-
+import os
 class Game():
 
     def __init__(self, level: Level, screen_size: tuple, game_size: tuple) -> None:
@@ -37,4 +39,13 @@ class Game():
         self.screen.fill((255, 255, 255))
 
         self.level.getObjects().draw(self.screen)
-        self.level.player.getPlayerSprite().draw(self.screen)
+        self.rotatePlayer(self.level.player.getAngle())
+        # self.level.player.getPlayerGroup().draw(self.screen)
+
+    def rotatePlayer(self, angle: float):
+        player_surf = self.level.player.getPlayerGroup().sprites()[0]
+        player_img = player_surf.image
+        player_tl = player_surf.rect.topleft
+        rotated_image = pygame.transform.rotate(player_img, angle)
+        new_rect = rotated_image.get_rect(center = player_img.get_rect(topleft=player_tl).center)
+        self.screen.blit(rotated_image, new_rect)
